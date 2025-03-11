@@ -238,39 +238,34 @@ class FrontendController extends Controller
     {
         $draw       = $request->get('draw');
         $start      = $request->get("start");
-        $rowperpage = $request->get("length"); // Rows display per page
+        $rowperpage = $request->get("length");
 
         $orderArr   = $request->get('order');
         $columnsArr = $request->get('columns');
         $searchArr  = $request->get('search');
 
-        // Determine order info (if needed)
-        $columnIndex   = $orderArr[0]['column']; // Column index
-        $columnName    = $columnsArr[$columnIndex]['data']; // Column name (not used in this example)
-        $columnSortOrder = $orderArr[0]['dir']; // asc or desc
 
-        $searchValue = trim($searchArr['value']); // The search string
+        $columnIndex   = $orderArr[0]['column'];
+        $columnName    = $columnsArr[$columnIndex]['data'];
+        $columnSortOrder = $orderArr[0]['dir'];
+        $searchValue = trim($searchArr['value']);
 
-        // Retrieve the project and base query with relationships
+
         $project   = Project::where('id', 1)->first();
         $baseQuery = $project->controls()->with(['responsibleUser', 'approverUser']);
 
-        // Get total records (unfiltered)
         $totalRecords = $baseQuery->count();
 
-        // Clone the query for filtering
         $query = clone $baseQuery;
 
-        // Apply search filtering if a search value is provided
         if (!empty($searchValue)) {
-            // If the search value is exactly "implemented" or "not implemented",
-            // then filter exclusively on the status column.
+
             if ($searchValue === 'implemented' || $searchValue === 'not implemented') {
                 $query->where('status', $searchValue);
             } else {
                 $query->where(function ($q) use ($searchValue) {
                     $q->where('name', 'LIKE', "%{$searchValue}%")
-                      // Use DB::raw to mimic the accessor for control id:
+
                       ->orWhere(DB::raw("CONCAT(primary_id, IF(id_seperator = " . DB::connection()->getPdo()->quote('&nbsp;') . ", '', id_seperator), sub_id)"), 'LIKE', "%{$searchValue}%")
                       ->orWhere('status', 'LIKE', "%{$searchValue}%")
                       ->orWhere('description', 'LIKE', "%{$searchValue}%")
@@ -285,25 +280,23 @@ class FrontendController extends Controller
             }
         }
 
-        // Get total records after filtering
+
         $totalRecordswithFilter = $query->count();
 
-        // If not filtering exclusively on status, order the results so that rows with an exact status match
-        // (i.e. where status = searchValue) appear first.
+
         if (!empty($searchValue) && !in_array($searchValue, ['implemented', 'not implemented'])) {
             $query->orderByRaw("CASE WHEN status = " . DB::connection()->getPdo()->quote($searchValue) . " THEN 0 ELSE 1 END");
         }
 
-        // Apply pagination
+
         $records = $query->skip($start)->take($rowperpage)->get();
 
-        // Prepare the response data – note we use the model’s accessor for control_id,
-        // and we return full names for responsible and approver.
+
         $data = [];
         foreach ($records as $record) {
             $data[] = [
                 'applicable'  => $record->applicable,
-                'controlId'   => $record->control_id, // This calls your getControlIdAttribute()
+                'controlId'   => $record->control_id,
                 'name'        => $record->name,
                 'description' => $record->description,
                 'status'      => $record->status,

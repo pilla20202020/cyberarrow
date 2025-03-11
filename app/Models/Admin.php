@@ -11,10 +11,9 @@ class Admin extends Model
 
     protected $fillable = [
         'full_name',
-        // Add any additional admin fields here.
+
     ];
 
-    // Optional: Relationships to project controls (if needed)
     public function controlsResponsible()
     {
         return $this->hasMany(ProjectControl::class, 'responsible_id');

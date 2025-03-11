@@ -23,26 +23,21 @@ class ProjectControl extends Model
         'responsible_id',
         'approver_id',
     ];
-
-    // Relationship to Project
     public function project()
     {
         return $this->belongsTo(Project::class);
     }
 
-    // Relationship to the responsible Admin
     public function responsibleUser()
     {
         return $this->belongsTo(Admin::class, 'responsible_id');
     }
 
-    // Relationship to the approver Admin
     public function approverUser()
     {
         return $this->belongsTo(Admin::class, 'approver_id');
     }
 
-    // Accessor to build controlId from primary_id, id_seperator and sub_id
     public function getControlIdAttribute()
     {
         if (!is_null($this->id_seperator)) {

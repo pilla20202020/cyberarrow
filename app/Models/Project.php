@@ -11,7 +11,6 @@ class Project extends Model
 
     protected $fillable = [
         'name',
-        // Add other fields as necessary.
     ];
 
     public function controls()
